@@ -9,6 +9,8 @@ if (network === 'fantom') config = require('./../config/fantom.json');
 
 console.log(`Loaded ${config.routes.length} routes`);
 
+
+//main function <setup(),,,lookForDualTrade()>
 const main = async () => {
   await setup();
   // Scale when using own node
@@ -45,11 +47,11 @@ const lookForDualTrade = async () => {
   let targetRoute;
   if (config.routes.length > 0) {
     targetRoute = useGoodRoutes();
-  } else {
+  } else {                    //search for routes to use
     targetRoute = searchForRoutes();
   }
   try {
-    let tradeSize = balances[targetRoute.token1].balance;
+    let tradeSize = balances[targetRoute.token1].balance; //connect to the smart contracts
     const amtBack = await arb.estimateDualDexTrade(targetRoute.router1, targetRoute.router2, targetRoute.token1, targetRoute.token2, tradeSize);
     const multiplier = ethers.BigNumber.from(config.minBasisPointsPerTrade+10000);
     const sizeMultiplied = tradeSize.mul(multiplier);
@@ -60,7 +62,7 @@ const lookForDualTrade = async () => {
     }
     if (amtBack.gt(profitTarget)) {
       await dualTrade(targetRoute.router1,targetRoute.router2,targetRoute.token1,targetRoute.token2,tradeSize);
-    } else {
+    } else {              //if good will execute the trade,,,if not will go back to <lookForDualTrade()>
       await lookForDualTrade();
     }
   } catch (e) {
@@ -75,7 +77,7 @@ const dualTrade = async (router1,router2,baseToken,token2,amount) => {
     return false;
   }
   try {
-    inTrade = true;
+    inTrade = true;//check if there are trades 
     console.log('> Making dualTrade...');
     const tx = await arb.connect(owner).dualDexTrade(router1, router2, baseToken, token2, amount); //{ gasPrice: 1000000000003, gasLimit: 500000 }
     await tx.wait();
@@ -89,10 +91,10 @@ const dualTrade = async (router1,router2,baseToken,token2,amount) => {
 }
 
 const setup = async () => {
-  [owner] = await ethers.getSigners();
+  [owner] = await ethers.getSigners(); ///get my wallet address
   console.log(`Owner: ${owner.address}`);
-  const IArb = await ethers.getContractFactory('Arb');
-  arb = await IArb.attach(config.arbContract);
+  const IArb = await ethers.getContractFactory('Arb');  //will establish <contract instance>
+  arb = await IArb.attach(config.arbContract); //the instance will be attached to {arbContract :}key in either json files in config
   balances = {};
   for (let i = 0; i < config.baseAssets.length; i++) {
     const asset = config.baseAssets[i];
@@ -119,7 +121,7 @@ const logResults = async () => {
     balances[asset.address].balance = await assetToken.balanceOf(config.arbContract);
     const diff = balances[asset.address].balance.sub(balances[asset.address].startBalance);
     const basisPoints = diff.mul(10000).div(balances[asset.address].startBalance);
-    console.log(`#  ${asset.sym}: ${basisPoints.toString()}bps`);
+    console.log(`#  ${asset.sym}: ${basisPoints.toString()}bps`);//will tell us how much we've made
   }
 }
 

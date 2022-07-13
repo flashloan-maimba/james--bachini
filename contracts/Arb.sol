@@ -38,7 +38,7 @@ contract Arb is Ownable {
 		uint deadline = block.timestamp + 300;
 		IUniswapV2Router(router).swapExactTokensForTokens(_amount, 1, path, address(this), deadline);
 	}
-
+    //query dex what happens when we put a certain amount of tokens in dex{slippage}
 	 function getAmountOutMin(address router, address _tokenIn, address _tokenOut, uint256 _amount) public view returns (uint256) {
 		address[] memory path;
 		path = new address[](2);
@@ -47,13 +47,13 @@ contract Arb is Ownable {
 		uint256[] memory amountOutMins = IUniswapV2Router(router).getAmountsOut(_amount, path);
 		return amountOutMins[path.length -1];
 	}
-
+   //will get data of amount profit after swap
   function estimateDualDexTrade(address _router1, address _router2, address _token1, address _token2, uint256 _amount) external view returns (uint256) {
 		uint256 amtBack1 = getAmountOutMin(_router1, _token1, _token2, _amount);
 		uint256 amtBack2 = getAmountOutMin(_router2, _token2, _token1, amtBack1);
 		return amtBack2;
 	}
-	
+	//will fire off the trade
   function dualDexTrade(address _router1, address _router2, address _token1, address _token2, uint256 _amount) external onlyOwner {
     uint startBalance = IERC20(_token1).balanceOf(address(this));
     uint token2InitialBalance = IERC20(_token2).balanceOf(address(this));
@@ -77,6 +77,7 @@ contract Arb is Ownable {
 		return balance;
 	}
 	
+	//after depsiting funds to this contract address u can recover them via this function
 	function recoverEth() external onlyOwner {
 		payable(msg.sender).transfer(address(this).balance);
 	}
